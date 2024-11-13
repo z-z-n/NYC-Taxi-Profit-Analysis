@@ -9,3 +9,15 @@ At the NYC TLC, this data analysis project aims to pinpoint high-potential picku
 
 ### Visualization
 For visualizing the data generated during the analysis, this project primarily establishes a Flask server on an EC2 instance to facilitate interaction with the frontend. The frontend interface reads the CSV analysis results stored in an S3 bucket and utilizes d3.js for visualization. Initially, the project creates a bar chart for the top 100 drop-off locations, color-coded by borough, to provide a visual representation. Subsequently, it calculates the drop-off frequency for each borough. Furthermore, for the weighting profits obtained from the analysis of pickup locations, d3.js is utilized to map these values onto a geographical map, using varying shades of color to indicate the magnitude, with tooltips providing detailed information for each area.
+
+![image](https://github.com/z-z-n/NYC-Taxi-Profit-Analysis/blob/master/Readme/1.jpg)
+<p align="center"><strong>Bar chart for the top 100 drop-off locations</strong></p>
+
+![image](https://github.com/z-z-n/NYC-Taxi-Profit-Analysis/blob/master/Readme/4.jpg)
+<p align="center"><strong>Bubble chart of the number of drop-offs borough</strong></p>
+
+![image](https://github.com/z-z-n/NYC-Taxi-Profit-Analysis/blob/master/Readme/2.jpg)
+<p align="center"><strong>Colored Map of drop-off frequencies</strong></p>
+
+![image](https://github.com/z-z-n/NYC-Taxi-Profit-Analysis/blob/master/Readme/3.jpg)
+<p align="center"><strong>Uncolored Map</strong></p>
