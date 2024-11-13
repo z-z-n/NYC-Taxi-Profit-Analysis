@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<head>
+    <script src="{{ url_for('static', filename='lib/d3.v5.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/d3-tip.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/d3-dsv.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/d3-geo-projection.v2.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/topojson.v2.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/d3-legend.min.js') }}"></script>
+<style>
+    body {
+        background-color: #666; /* page background */
+    }
+
+    .bg-color-sky-light {
+        background-color: rgb(231,241,245); 
+        padding: 20px; 
+        margin-bottom: 20px; 
+        border-radius: 10px; 
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    path {
+        stroke: #666;
+        stroke-width: 1.5px;
+    }
+
+    text {
+        fill: #000;
+        font: 10px sans-serif;
+        pointer-events: none;
+    }
+
+    /* define CSS rules here */
+    .tooltip {
+        position: absolute;
+        background-color: white;
+        padding: 10px;
+        border: 1px solid black;
+        border-radius: 5px;
+        pointer-events: none;
+        opacity: 0;
+    }
+
+    a{
+        color: skyblue;
+        font-size: 15px;
+        font-weight: bold;
+        text-decoration: none; 
+    }
+    a.now{
+        color: rgb(98, 150, 216);
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    a.author{
+        color: black;
+        font-size: 15px;
+        text-decoration: underline;
+    }
+
+    #maps{
+        width: 1000px;
+        margin: 0 auto;
+    }
+
+</style>
+<meta charset="utf-8">
+<title></title>
+</head>
+
+<body>
+    <div class="wrapper">
+        <!--========== PAGE CONTENT ==========-->
+        <div class="bg-color-sky-light">
+            <br>
+            <center>
+                <h2>Potential NYC Taxi Profit Analysis</h2>
+                <br> <a href="/">Home</a> | <a href="/topdrop">Drop-off Info</a> | <a href="/promap" class="now">Profit Distribution Map</a>
+                <br>
+                <br>
+                <br>
+                <div id="toggle-switch">
+                    <label>
+                        <input type="checkbox" id="toggle" checked> Show Colored Map
+                    </label>
+                </div>
+            </center>
+        </div>
+        <!--========== END PAGE CONTENT ==========-->
+    </div>
+    <div id="maps"></div>
+    <div id="tooltip"></div>
+    <div style="padding: 20px; background-color: white; color: black;">
+        <center>
+            <h2>ECE4150 Cloud Computing</h2>
+            <a href="mailto:zzhang3180@gatech.edu" class="author">Zhining Zhang</a> | <a href="mailto:hhuang466@gatech.edu" class="author">  Hongyun Huang</a>
+        </center>
+    </div>
+<!-- <script type="text/javascript" src="/lib/d3.v5.min.js"></script> -->
+<script>
+    // get the data
+    var data = {{ data | tojson }};
+    console.log(data)
+
+    // Set canvas width and height
+    var canvasWidth = 1000;
+    var canvasHeight = 1000;
+
+    // Create SVG canvas for maps
+    var canvas = d3.select("#maps")
+                .append("svg")
+                .attr("width", canvasWidth)
+                .attr("height", canvasHeight);
+
+    var margin = {
+        top: 20,
+        right: 20,
+        bottom: 30,
+        left: 30
+    };
+    margin.width = margin.left + margin.right;
+    margin.height = margin.top + margin.bottom;
+
+    // enter code to define tooltip
+    var tooltip = d3.select("#tooltip")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
+    // Define color scale
+    var colorScale = d3.scaleLinear()
+        .domain([0, d3.max(data, function(d) { return d.value; })]) // Mapping domain from 0 to max value in data
+        .range(["rgb(231,241,245)", "rgb(0,0,140)"]); // Desired color range
+
+    try {
+        Promise.all([
+            d3.json("{{ url_for('static', filename='taxi_zones.json')}}"),
+            d3.csv("{{ url_for('static', filename='taxi_zone_lookup.csv')}}")
+        ]).then(function (values) {
+            var region = values[0]
+            var zoneInfo = values[1]
+            console.log("map region", region);
+            console.log("map zone", zoneInfo);
+
+            var predata = preprocess(region)
+            console.log(predata)
+
+            var geoPath = d3.geoPath(d3.geoMercator()
+            .fitExtent([
+                [margin.left, margin.top],
+                [canvasWidth - margin.width, canvasHeight - margin.height]
+            ], predata));
+
+            var taxiZoneGroups = canvas.append('g')
+            .classed('taxi-zones', true)
+            .selectAll('.taxi-zone')
+            .data(predata.features);
+            
+            taxiZoneGroups.enter()
+            .append('g')
+            .classed('taxi-zone', true)
+            .append('path')
+            .attr('d', geoPath)
+            .attr("fill", function(d) {
+                var selectedZone = d.properties['LocationID'];
+                var found = data.find(function(item) {
+                    return item.locationID === selectedZone;
+                });
+                if (found) {
+                    return colorScale(found.value);
+                } else {
+                    return "white"; // Default color for zones not found in data
+                }
+            })
+            .on('mouseover', function (d) {
+                // selectedZone = d.properties['LocationID'];
+                // console.log(selectedZone);
+                tooltipMouseOver(d, zoneInfo)
+            })
+            .on("mouseout", function(d) {
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+            // Toggle switch event listener
+            d3.select("#toggle").on("change", function() {
+                var checked = d3.select(this).property("checked");
+                if (checked) {
+                    // Show colored map
+                    canvas.selectAll(".taxi-zone path")
+                        .attr("fill", function(d) {
+                            var selectedZone = d.properties['LocationID'];
+                            var found = data.find(function(item) {
+                                return item.locationID === selectedZone;
+                            });
+                            if (found) {
+                                return colorScale(found.value);
+                            } else {
+                                return "white"; // Default color for zones not found in data
+                            }
+                        });
+                } else {
+                    // Show default map
+                    canvas.selectAll(".taxi-zone path")
+                        .attr("fill", "rgb(255,245,240)");
+                }
+            });
+
+        });
+        // preprocess map data
+        function preprocess(taxiZones) {
+            taxiZones.features.forEach(function (feature) {
+                var coords = [];
+
+                /**
+                 * Finds the coordinates of the polygon object from the data and adds it to the coordinates property of the zone.
+                 *
+                 * @param obj The object to parse for the X and Y values of the polygon coordinate.
+                 */
+                function findCoords(obj) {
+                    // Object is the point
+                    if (obj.length == 2 && !obj[0].length && !obj[1].length) {
+                        coords.push(obj);
+                    } else {
+                        // Object is higher level container
+                        for (var i = obj.length - 1; i >= 0; i--) {
+                            findCoords(obj[i]);
+                        }
+                    }
+                }
+
+                findCoords(feature.geometry.coordinates);
+                feature.properties.center = [0, 0];
+
+                // Get averaged center of polygon
+                coords.forEach(function (coord) {
+                    feature.properties.center[0] += coord[0];
+                    feature.properties.center[1] += coord[1];
+                });
+
+                feature.properties.center[0] /= coords.length;
+                feature.properties.center[1] /= coords.length;
+            });
+            return taxiZones;
+        }
+        function tooltipMouseOver(d, zoneInfo) {
+            var selectedZone = d.properties['LocationID'];
+            tooltip.transition()
+                    .duration(200)
+                    .style("opacity", 0.8);
+            tooltip.html(function(d) {
+                var found = data.find(function(item) {
+                    return item.locationID === selectedZone;
+                });
+                var found_zone = zoneInfo.find(function(item) {
+                    return parseInt(item.LocationID) === selectedZone;
+                });
+                if (found) {
+                    return "<strong>LocationID:</strong> " + selectedZone + "<br>" +
+                        "<strong>Borough:</strong> " + found.borough + "<br>" +
+                        "<strong>Zone:</strong> " + found.zone + "<br>" +
+                        "<strong>Weighted Profit:</strong> " + found.value;
+                } else {
+                    return "<strong>LocationID:</strong> " + selectedZone + "<br>" +
+                        "<strong>Borough:</strong> " + found_zone.Borough + "<br>" +
+                        "<strong>Zone:</strong>" + found_zone.Zone +  "<br>" +
+                        "<strong>Weighted Profit:</strong> N/A";
+                }
+            })
+            .style("left", (d3.event.pageX + 10 ) + "px")
+            .style("top", (d3.event.pageY - 28) + "px");
+        }
+    } catch (error) {
+        console.error(error);
+    }
+</script>
+</body>
+</html>

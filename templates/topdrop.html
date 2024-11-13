@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<head>
+    <script src="{{ url_for('static', filename='lib/d3.v5.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/d3-tip.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/d3-dsv.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/d3-geo-projection.v2.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/topojson.v2.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='lib/d3-legend.min.js') }}"></script>
+<style>
+/* define CSS rules here */
+    body {
+            background-color: rgb(231,241,245); /* page background */
+        }
+
+    .bg-color-sky-light {
+        background-color: white; 
+        padding: 20px; 
+        margin-bottom: 20px; 
+        border-radius: 10px; 
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .tooltip {
+        position: absolute;
+        background-color: white;
+        padding: 10px;
+        border: 1px solid black;
+        border-radius: 5px;
+        pointer-events: none;
+        opacity: 0;
+    }
+
+    .axis path,
+    .axis line {
+    fill: none;
+    stroke: #000; /* set axios color */
+    shape-rendering: crispEdges;
+    }
+
+    .axis text {
+    font-family: sans-serif; 
+    font-size: 10px;
+    }
+
+    a{
+        color: skyblue;
+        font-size: 15px;
+        font-weight: bold;
+        text-decoration: none; 
+    }
+    a.now{
+        color: rgb(98, 150, 216);
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    a.author{
+        color: black;
+        font-size: 15px;
+        text-decoration: underline;
+    }
+
+    #chart{
+        width: 1500px;
+        margin: 0 auto;
+    }
+
+    #maps {
+        width: 1500px;
+        margin: 0 auto;
+    }
+
+</style>
+<meta charset="utf-8">
+<title></title>
+</head>
+
+<body>
+    <div class="wrapper">
+        <!--========== PAGE CONTENT ==========-->
+        <div class="bg-color-sky-light">
+            <br>
+            <center>
+                <h2>Potential NYC Taxi Profit Analysis</h2>
+                <br> <a href="/">Home</a> | <a href="/topdrop" class="now">Drop-off Info</a> | <a href="/promap">Profit Distribution Map</a>
+                <br>
+                <br>
+                <br>
+            </center>
+        </div>
+        <!--========== END PAGE CONTENT ==========-->
+    </div>
+    <div id="chart"></div>
+    <div id="maps"></div>
+    <div id="tooltip"></div>
+    <div style="padding: 20px; background-color: white; color: black;">
+        <center>
+            <h2>ECE4150 Cloud Computing</h2>
+            <a href="mailto:zzhang3180@gatech.edu" class="author">Zhining Zhang</a> | <a href="mailto:hhuang466@gatech.edu" class="author">  Hongyun Huang</a>
+        </center>
+    </div>
+<!-- <script type="text/javascript" src="/lib/d3.v5.min.js"></script> -->
+<script>
+    // get the data
+    var data = {{ data | tojson }};
+    console.log(data)
+
+    const svgWidth = 1500;
+    const svgHeight = 800;
+    const margin = { top: 50, right: 200, bottom: 50, left: 70 };
+    const width = svgWidth - margin.left - margin.right;
+    const height = svgHeight - margin.top - margin.bottom;
+
+    // Create SVG
+    var svg = d3.select("#chart")
+                .append("svg")
+                .attr("width", svgWidth)
+                .attr("height", svgHeight)
+                .append("g")
+                .attr("id", "plot-a")
+                .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+    // Set up scales
+    var xScale = d3.scaleBand()
+                    .domain(data.map(function(d) { return d.locationID; }))
+                    .range([0, width])
+                    .padding(0.1);
+
+    var yScale = d3.scaleLinear()
+                    .domain([0, d3.max(data, function(d) { return d.value; })])
+                    .range([height, 0]);
+
+                    // Define color scale
+    var color = d3.scaleOrdinal()
+        .domain(data.map(function(d) { return d.borough; }))
+        .range(d3.schemeCategory10);
+
+    // Draw barsd
+    svg.selectAll("rect")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("x", function(d) { return xScale(d.locationID); })
+        .attr("y", function(d) { return yScale(d.value); })
+        .attr("width", xScale.bandwidth())
+        .attr("height", function(d) { return height - yScale(d.value); })
+        .attr("fill", function(d) { return color(d.borough); });
+
+    var legend = svg.selectAll(".legend")
+        .data(color.domain())
+        .enter().append("g")
+        .attr("class", "legend")
+        .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+    legend.append("rect")
+        .attr("x", width - 100)
+        .attr("width", 18)
+        .attr("height", 18)
+        .style("fill", color);
+
+    legend.append("text")
+        .attr("x", width - 80)
+        .attr("y", 9)
+        .attr("dy", ".35em")
+        .style("text-anchor", "start")
+        .text(function(d) { return d; });
+
+    // Add x axis
+    var xAxis = svg.append("g")
+        .attr("class", "axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(xScale));
+
+    xAxis.append("text")
+        .attr("class", "x-axis-label")
+        .attr("fill", "black")
+        .attr("x", width / 2) 
+        .attr("y", 40) 
+        .style("text-anchor", "middle") 
+        .style("font-size", "16px")
+        .text("LoctionID");
+
+    // Add y axis
+    var yAxis = svg.append("g")
+        .attr("class", "axis")
+        .call(d3.axisLeft(yScale));
+        
+    yAxis.append("text")
+        .attr("class", "y-axis-label")
+        .attr("fill", "black")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margin.left)
+        .attr("x", 0 - (height / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .style("font-size", "16px")
+        .text("Num of dropoff");
+    
+    svg.append("text")
+    .attr("class", "title")
+    .attr("x", width / 2)
+    .attr("y", -20)
+    .style("text-anchor", "middle")
+    .style("font-size", "25px")
+    .style("font-family", "Times New Roman" )
+    .text("Top 100 Locations with the Highest Number of Drop-offs");
+
+
+
+
+
+    // draw bubble chart
+    var boroughData = d3.nest()
+            .key(function(d) { return d.borough; })
+            .rollup(function(v) { return d3.sum(v, function(d) { return d.value; }); })
+            .entries(data);
+
+    const svg_b_Width = 800;
+    const svg_b_Height = 800;
+
+    // Create SVG for bubble chart
+    var svg_bubble = d3.select("#maps")
+                .append("svg")
+                .attr("width", svg_b_Width)
+                .attr("height", svg_b_Height)
+                .attr("id", "plot-b")
+                .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+    // Define scale for bubble size
+    var bubbleSize = d3.scaleSqrt()
+                        .domain([0, d3.max(boroughData, function(d) { return d.value; })])
+                        .range([30, 200]);
+    // Define force simulation
+    var simulation = d3.forceSimulation()
+                        .force("center", d3.forceCenter(svg_b_Width / 2, svg_b_Height / 2)) // Center the simulation in SVG
+                        .force("charge", d3.forceManyBody().strength(-200)) // Repel nodes to prevent overlapping
+                        .force("colslide", d3.forceCollide().radius(50)) // Prevent node collision
+                        .on("tick", ticked);
+
+    var colorScale = d3.scaleOrdinal()
+                    .domain(boroughData.map(function(d) { return d.key; }))
+                    .range(d3.schemeCategory10);
+    
+    var tooltip = d3.select("#tooltip")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+    // Draw bubbles
+    var bubbles = svg_bubble.selectAll(".bubble")
+                    .data(boroughData)
+                    .enter()
+                    .append("circle")
+                    .attr("class", "bubble")
+                    .attr("r", function(d) { return bubbleSize(d.value); }) // Set radius based on total value
+                    .attr("fill", function(d) { return colorScale(d.key); })
+                    .attr("opacity", 0.5)
+                    .on("mouseover", function(d) {
+                        // Show tooltip on mouseover
+                        tooltip.style("left", (d3.event.pageX + 10) + "px")
+                            .style("top", (d3.event.pageY - 20) + "px")
+                            .style("opacity", 0.9)
+                            .html("<strong>Borough:</strong> " + d.key + "<br><strong>Total Value:</strong> " + d.value);
+                        console.log(d3.event.pageX, d3.event.pageY);
+                    })
+                    .on("mouseout", function(d) {
+                        // Hide tooltip on mouseout
+                        tooltip.style("opacity", 0);
+                    });
+
+    // Add labels to bubbles
+    var labels = svg_bubble.selectAll(".label")
+                    .data(boroughData)
+                    .enter()
+                    .append("text")
+                    .attr("class", "label")
+                    .style("font-size", "15px")
+                    .style("fill", "white")
+                    .style("font-family", "Times New Roman")
+                    .style("font-weight", "bold")
+                    .attr("text-anchor", "middle")
+                    .attr("alignment-baseline", "central")
+                    .text(function(d) { return d.key; }); // Display borough name as label
+    
+    svg_bubble.append("text")
+        .attr("class", "title")
+        .attr("x", svg_b_Width / 2 +70)
+        .attr("y", 20)
+        .style("text-anchor", "middle")
+        .style("font-size", "25px")
+        .style("font-family", "Times New Roman" )
+        .attr("fill", "black")
+        .text("Bubble chart of the number of drop-offs borough");
+
+    // Start force simulation
+    simulation.nodes(boroughData);
+
+    function ticked() {
+        bubbles.attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
+
+        labels.attr("x", function(d) { return d.x; })
+            .attr("y", function(d) { return d.y; }); // Adjust y position for each label
+    }
+
+</script>
+</body>
+</html>

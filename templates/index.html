@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<head>
+    <style>
+        body {
+            background-color: rgb(231,241,245); /* page background */
+        }
+
+        .bg-color-sky-light {
+            background-color: white; 
+            padding: 20px; 
+            margin-bottom: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        a{
+            color: skyblue;
+            font-size: 15px;
+            font-weight: bold;
+            text-decoration: none; 
+        }
+        a.now{
+            color: rgb(98, 150, 216);
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+        a.intro{
+            font-size: 20px;
+        }
+        a.author{
+            color: black;
+            font-size: 15px;
+            text-decoration: underline;
+        }
+        .Introduction {
+            width: 70%;
+            margin: 0 auto;
+        }
+    </style>
+    <meta charset="utf-8">
+    <title></title>
+</head>
+
+<body>
+    <div class="wrapper">
+        <!--========== PAGE CONTENT ==========-->
+        <div class="bg-color-sky-light">
+            <br>
+            <center>
+                <h2>Potential NYC Taxi Profit Analysis</h2>
+                <br> <a href="/" class="now">Home</a> | <a href="/topdrop">Drop-off Info</a> | <a href="/promap">Profit Distribution Map</a>
+                <br>
+                <br>
+                <br>
+            </center>
+        </div>
+        <div class="Introduction">
+            <h2>Introduction</h2> 
+            <p style="font-size: 20px;">
+                The analysis of potential profit for NYC taxi services involves utilizing a variety of AWS services to assess the potential benefits of 
+                picking up passengers in different areas of New York City. Utilizing AWS infrastructure, analysts store the NYC Taxi and Limousine Commission (TLC) 
+                dataset as CSV files in S3 buckets. With this extensive dataset, AWS EMR employs Spark to accelerate analysis, 
+                processing millions of records stored in S3. This efficient utilization of AWS services facilitates rapid computation and provides valuable 
+                insights into the potential benefits of serving passengers in various NYC locations.
+            </p>
+            <div style="text-align: center;">
+                <img src="/static/img/sparklogo.png" alt="spark logo" style="width: 200px; height: auto; margin: 0 10px;">
+                <img src="/static/img/s3logo.png" alt="s3 logo" style="width: 200px; height: auto; margin: 0 10px;">
+                <img src="/static/img/amazon-emr.png" alt="amazon emr logo" style="width: 200px; height: auto; margin: 0 10px;">
+            </div>
+            <h2>Data Analysis</h2> 
+            <p style="font-size: 20px;">
+                The <a href="https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page" class="intro">TLC (Taxi and Limousine Commission)</a> Trip Record Dataset 
+                is a comprehensive collection of taxi trip data maintained by the City of New York. 
+                This dataset provides valuable insights into the operation of taxi services within the city, including details such as 
+                pickup and drop-off locations, trip duration, fare information, and other relevant metrics. For the project, a subset of the TLC dataset was selected, 
+                specifically focusing on Yellow taxis for the month of January 2019. This subset comprises over 7,600,000 individual trip records, 
+                offering a rich source of data for analysis and exploration.
+            </p>
+            <p style="font-size: 20px;">
+                At the NYC TLC, this data analysis project aims to pinpoint high-potential pickup spots for taxi drivers, focusing on profitability. 
+                By initially identifying the top 100 drop-off locations in New York with PySpark, it becomes evident that Manhattan has a significantly higher volume of drop-offs 
+                compared to other boroughs. Following this, the project obtains the 30 most popular drop-off locations in Manhattan, and analyzes all pickup locations citywide, 
+                calculating key metrics such as average trip revenue and trip counts. By weighting profits based on the probability of passengers heading to popular destinations, 
+                the analysis guides strategic taxi deployment, optimizing service for maximum profitability and meeting passenger demand effectively.
+            </p>
+            <div style="text-align: center;">
+                <img src="/static/img/flask.svg" alt="flask logo" style="width: 100px; height: auto; margin: 0 10px;">
+                <img src="/static/img/d3logo.png" alt="d3 loo" style="width: 150px; height: auto; margin: 0 10px;">
+                <img src="/static/img/EC2logo.png" alt="amazon EC2 logo" style="width: 200px; height: auto; margin: 0 10px;">
+            </div>
+            <h2>Visualization</h2> 
+            <p style="font-size: 20px;">
+                For visualizing the data generated during the analysis, this project primarily establishes a Flask server on an EC2 instance to facilitate interaction with the frontend. 
+                The frontend interface reads the CSV analysis results stored in an S3 bucket and utilizes d3.js for visualization. 
+                Initially, the project creates a bar chart for the top 100 drop-off locations, color-coded by borough, to provide a visual representation. 
+                Subsequently, it calculates the drop-off frequency for each borough. Furthermore, for the weighting profits obtained from the analysis of pickup locations, 
+                d3.js is utilized to map these values onto a geographical map, using varying shades of color to indicate the magnitude, 
+                with tooltips providing detailed information for each area.
+            </p>
+        </div>
+        <!--========== END PAGE CONTENT ==========-->
+    </div>
+    <div style="padding: 20px; background-color: white; color: black;">
+        <center>
+            <h2>ECE4150 Cloud Computing</h2>
+            <a href="mailto:zzhang3180@gatech.edu" class="author">Zhining Zhang</a> | <a href="mailto:hhuang466@gatech.edu" class="author">  Hongyun Huang</a>
+        </center>
+    </div>
+</body>
+</html>
